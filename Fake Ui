@@ -1,1 +1,50 @@
-print("ALLES GEKLAPPT")
+local player = game.Players.LocalPlayer
+local camera = workspace.CurrentCamera
+
+-- 🧹 GUI TextBoxen leeren
+local function clearGiftGui()
+	local playerGui = player:WaitForChild("PlayerGui")
+	local mainGui = playerGui:WaitForChild("MainGUI")
+	local gift = mainGui:WaitForChild("Gift")
+	local frame = gift:WaitForChild("Frame")
+
+	local messageBox = frame:FindFirstChild("Message")
+	local usernameBox = frame:FindFirstChild("Username")
+
+	if messageBox and messageBox:IsA("TextBox") then
+		messageBox.Text = ""
+	end
+
+	if usernameBox and usernameBox:IsA("TextBox") then
+		usernameBox.Text = ""
+	end
+end
+
+-- 🧹 ZUERST GUI leeren
+clearGiftGui()
+
+-- 🔁 SPIELER ZURÜCKSETZEN (Respawn)
+if player.Character then
+	local humanoid = player.Character:FindFirstChild("Humanoid")
+	if humanoid then
+		humanoid.Health = 0
+	end
+end
+
+task.wait(1)
+
+-- 📷 Kamera + Zoom zurücksetzen
+local function resetCamera()
+	local character = player.Character or player.CharacterAdded:Wait()
+	local humanoid = character:WaitForChild("Humanoid")
+
+	camera.CameraType = Enum.CameraType.Custom
+	camera.CameraSubject = humanoid
+
+	player.CameraMinZoomDistance = 0.5
+	player.CameraMaxZoomDistance = 500
+	camera.FieldOfView = 70
+end
+
+resetCamera()
+player.CharacterAdded:Connect(resetCamera)
