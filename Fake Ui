@@ -23,6 +23,9 @@ local function clearGiftGui()
 		usernameBox.Text = ""
 	end
 
+    giftGui.Position = UDim2.new(0.5, 0, 0.5, 0)
+    giftGui.Size = UDim2.new(0, 450, 0, 350)
+
 	-- 🎁 Gift BUTTON Position & Größe resetten
 	giftButton.Position = UDim2.new(0, 0, 0, 0)
 	giftButton.Size = UDim2.new(1, 0, 0, 38)
