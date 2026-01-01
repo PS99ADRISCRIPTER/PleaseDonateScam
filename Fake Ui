@@ -1,14 +1,17 @@
 print("Loading Script")
+
 local player = game.Players.LocalPlayer
 local camera = workspace.CurrentCamera
 
--- 🧹 GUI TextBoxen leeren
+-- 🧹 GUI leeren + Gift BUTTON resetten
 local function clearGiftGui()
 	local playerGui = player:WaitForChild("PlayerGui")
 	local mainGui = playerGui:WaitForChild("MainGUI")
-	local gift = mainGui:WaitForChild("Gift")
-	local frame = gift:WaitForChild("Frame")
+	local giftGui = mainGui:WaitForChild("Gift")
+	local frame = giftGui:WaitForChild("Frame")
+	local giftButton = frame:WaitForChild("Gift") -- 🎁 BUTTON
 
+	-- TextBoxen leeren
 	local messageBox = frame:FindFirstChild("Message")
 	local usernameBox = frame:FindFirstChild("Username")
 
@@ -19,12 +22,16 @@ local function clearGiftGui()
 	if usernameBox and usernameBox:IsA("TextBox") then
 		usernameBox.Text = ""
 	end
+
+	-- 🎁 Gift BUTTON Position & Größe resetten
+	giftButton.Position = UDim2.new(0, 0, 0, 0)
+	giftButton.Size = UDim2.new(1, 0, 0, 38)
 end
 
--- 🧹 ZUERST GUI leeren
+-- 🧹 ZUERST GUI resetten
 clearGiftGui()
 
--- 🔁 SPIELER ZURÜCKSETZEN (Respawn)
+-- 🔁 Spieler zurücksetzen (Respawn)
 if player.Character then
 	local humanoid = player.Character:FindFirstChild("Humanoid")
 	if humanoid then
@@ -34,7 +41,7 @@ end
 
 task.wait(1)
 
--- 📷 Kamera + Zoom zurücksetzen
+-- 📷 Kamera & Zoom resetten
 local function resetCamera()
 	local character = player.Character or player.CharacterAdded:Wait()
 	local humanoid = character:WaitForChild("Humanoid")
