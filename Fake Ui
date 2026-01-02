@@ -44,18 +44,46 @@ end
 
 task.wait(1)
 
--- 📷 Kamera & Zoom resetten
-local function resetCamera()
+-- 📷 Kamera Full Reset Script (LocalScript)
+
+local Players = game:GetService("Players")
+local RunService = game:GetService("RunService")
+
+local player = Players.LocalPlayer
+local camera = workspace.CurrentCamera
+
+local function resetCameraCompletely()
+	-- Warten bis Character & Humanoid existieren
 	local character = player.Character or player.CharacterAdded:Wait()
 	local humanoid = character:WaitForChild("Humanoid")
 
+	-- Kamera auf Standard
 	camera.CameraType = Enum.CameraType.Custom
 	camera.CameraSubject = humanoid
 
+	-- Standard Roblox Werte
+	camera.FieldOfView = 70
+	camera.HeadLocked = false
+
 	player.CameraMinZoomDistance = 0.5
 	player.CameraMaxZoomDistance = 500
-	camera.FieldOfView = 70
+
+	-- Kamera-CFrame zurücksetzen (sehr wichtig)
+	RunService:BindToRenderStep("CameraReset", Enum.RenderPriority.Camera.Value + 1, function()
+		camera.CFrame = humanoid.RootPart.CFrame
+		RunService:UnbindFromRenderStep("CameraReset")
+	end)
 end
+
+-- Beim Start
+resetCameraCompletely()
+
+-- Bei jedem Respawn
+player.CharacterAdded:Connect(function()
+	task.wait(0.2)
+	resetCameraCompletely()
+end)
+
 
 -- ============================================
 -- SCRIPT 2: 40px RESETTER (mit Enforcer-Stop)
