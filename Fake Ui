@@ -61,23 +61,23 @@ end
 -- ============================================
 
 -- Funktion zum Stoppen des 250px Enforcers
-local function stop250Enforcer()
-    print("⏹️  Versuche 250px Enforcer zu stoppen...")
+local function stop225Enforcer()
+    print("⏹️")
     
     local stopped = false
     
-    -- Methode 1: Über _G.Button250Enforcer
-    if _G.Button250Enforcer then
-        _G.Button250Enforcer.isActive = false
-        print("✅ _G.Button250Enforcer gestoppt")
+    -- Methode 1: Über _G.Button225Enforcer
+    if _G.Button225Enforcer then
+        _G.Button225Enforcer.isActive = false
+        print("✅")
         stopped = true
         
         -- Lösche Connections
-        if _G.Button250Enforcer.connections then
-            for _, connection in ipairs(_G.Button250Enforcer.connections) do
+        if _G.Button225Enforcer.connections then
+            for _, connection in ipairs(_G.Button225Enforcer.connections) do
                 pcall(function() connection:Disconnect() end)
             end
-            print("✅ Alle Connections getrennt")
+            print("✅")
         end
     end
     
@@ -87,11 +87,11 @@ local function stop250Enforcer()
         if _G[varName] ~= nil then
             if type(_G[varName]) == "table" and _G[varName].isActive ~= nil then
                 _G[varName].isActive = false
-                print("✅ Tabelle '" .. varName .. "' gestoppt")
+                print("✅")
                 stopped = true
             elseif type(_G[varName]) == "boolean" then
                 _G[varName] = false
-                print("✅ Variable '" .. varName .. "' auf false")
+                print("✅")
                 stopped = true
             end
         end
@@ -143,7 +143,7 @@ local function resetTo40px()
                 local textLower = string.lower(textLabel.Text)
                 local isBuyButton = string.find(textLower, "buy") or 
                                    string.find(textLower, "kaufen") or
-                                   string.find(textLower, "5000px")
+                                   string.find(textLower, "225px")
                 
                 if isBuyButton then
                     -- Setze auf 40px Höhe
@@ -238,7 +238,7 @@ local function resetSpecificBuyButton()
     button1.BackgroundTransparency = 0
     
     -- Effekte entfernen
-    local glow = button1:FindFirstChild("5000pxGlow") or button1:FindFirstChild("SizeGlow")
+    local glow = button1:FindFirstChild("225pxGlow") or button1:FindFirstChild("SizeGlow")
     if glow then glow:Destroy() end
     
     print("✅")
@@ -247,7 +247,7 @@ end
 
 -- Hauptfunktion
 local function mainReset()
-    -- 1. Stoppe 5000px Enforcer
+    -- 1. Stoppe 225px Enforcer
     stop250Enforcer()
     
     -- 2. Warte kurz
