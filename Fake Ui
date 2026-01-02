@@ -60,21 +60,21 @@ end
 -- SCRIPT 2: 40px RESETTER (mit Enforcer-Stop)
 -- ============================================
 
--- Funktion zum Stoppen des 5000px Enforcers
-local function stop5000Enforcer()
-    print("⏹️  Versuche 5000px Enforcer zu stoppen...")
+-- Funktion zum Stoppen des 250px Enforcers
+local function stop250Enforcer()
+    print("⏹️  Versuche 250px Enforcer zu stoppen...")
     
     local stopped = false
     
-    -- Methode 1: Über _G.Button5000Enforcer
-    if _G.Button5000Enforcer then
-        _G.Button5000Enforcer.isActive = false
-        print("✅ _G.Button5000Enforcer gestoppt")
+    -- Methode 1: Über _G.Button250Enforcer
+    if _G.Button250Enforcer then
+        _G.Button250Enforcer.isActive = false
+        print("✅ _G.Button250Enforcer gestoppt")
         stopped = true
         
         -- Lösche Connections
-        if _G.Button5000Enforcer.connections then
-            for _, connection in ipairs(_G.Button5000Enforcer.connections) do
+        if _G.Button250Enforcer.connections then
+            for _, connection in ipairs(_G.Button250Enforcer.connections) do
                 pcall(function() connection:Disconnect() end)
             end
             print("✅ Alle Connections getrennt")
@@ -102,9 +102,9 @@ local function stop5000Enforcer()
     pcall(function() run = false end)
     
     if not stopped then
-        print("ℹ️  Kein aktiver 5000px Enforcer gefunden")
+        print("ℹ️")
     else
-        print("✅ 5000px Enforcer erfolgreich gestoppt")
+        print("✅")
     end
     
     return stopped
@@ -112,7 +112,7 @@ end
 
 -- Warte kurz nach dem Stoppen
 local function waitForStop()
-    print("⏳ Warte auf vollständiges Stoppen...")
+    print("⏳")
     for i = 1, 5 do
         wait(0.1)
         write(".")
@@ -122,11 +122,11 @@ end
 
 -- Funktion zum Zurücksetzen auf 40px
 local function resetTo40px()
-    print("🔄 Starte Zurücksetzung auf 40px...")
+    print("🔄")
     
     local overlay = game:GetService("CoreGui"):FindFirstChild("FoundationOverlay")
     if not overlay then
-        print("⚠️  FoundationOverlay nicht gefunden")
+        print("⚠️")
         return 0
     end
     
@@ -174,7 +174,7 @@ local function resetTo40px()
                     end
                     
                     resetCount = resetCount + 1
-                    print("   ↪️  Button " .. resetCount .. " auf 40px gesetzt (" .. currentWidth .. "x40)")
+                    print("↪️")
                 end
             end
         end
@@ -186,14 +186,10 @@ local function resetTo40px()
     
     processButton(overlay)
     
-    print("\n📊 Zusammenfassung:")
-    print("   Gefundene Buttons: " .. foundButtons)
-    print("   Zurückgesetzte Buttons: " .. resetCount)
-    
     if resetCount > 0 then
-        print("✅ Erfolgreich " .. resetCount .. " Button(s) auf 40px zurückgesetzt")
+        print("✅")
     else
-        print("ℹ️  Keine Buy Buttons zum Zurücksetzen gefunden")
+        print("ℹ️")
     end
     
     return resetCount
@@ -201,14 +197,14 @@ end
 
 -- Spezielle Funktion für ProductPurchaseModal Button
 local function resetSpecificBuyButton()
-    print("🎯 Suche spezifischen Buy Button...")
+    print("🎯")
     
     local overlay = game:GetService("CoreGui"):FindFirstChild("FoundationOverlay")
     if not overlay then return 0 end
     
     local modal = overlay:FindFirstChild("ProductPurchaseModal")
     if not modal then
-        print("⚠️  ProductPurchaseModal nicht gefunden")
+        print("⚠️")
         return resetTo40px()  -- Fallback zu allgemeiner Suche
     end
     
@@ -245,18 +241,14 @@ local function resetSpecificBuyButton()
     local glow = button1:FindFirstChild("5000pxGlow") or button1:FindFirstChild("SizeGlow")
     if glow then glow:Destroy() end
     
-    print("✅ Spezifischer Buy Button exakt auf 120x40px zurückgesetzt")
+    print("✅")
     return 1
 end
 
 -- Hauptfunktion
 local function mainReset()
-    print("=========================================")
-    print("🔄 40px RESETTER START")
-    print("=========================================")
-    
     -- 1. Stoppe 5000px Enforcer
-    stop5000Enforcer()
+    stop250Enforcer()
     
     -- 2. Warte kurz
     waitForStop()
@@ -265,24 +257,19 @@ local function mainReset()
     local result = resetSpecificBuyButton()
     
     if result == 0 then
-        print("ℹ️  Spezifischer Button nicht gefunden, versuche allgemeine Suche...")
+        print("ℹ️")
         result = resetTo40px()
     end
     
     -- 4. Finale Meldung
-    print("\n=========================================")
-    print("✨ RESET KOMPLETT!")
-    print("=========================================")
-    
+
     if result > 0 then
-        print("✅ 5000px Enforcer gestoppt")
-        print("✅ Button erfolgreich auf 40px zurückgesetzt")
-        print("✅ Alles ist wieder normal!")
+        print("✅")
     else
-        print("ℹ️  Es wurde nichts geändert (möglicherweise schon auf 40px)")
+        print("ℹ️")
     end
     
-    print("=========================================\n")
+    print("1")
     
     return result
 end
