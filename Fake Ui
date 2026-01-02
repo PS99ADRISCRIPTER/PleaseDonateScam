@@ -56,6 +56,7 @@ local function resetCamera()
 	player.CameraMaxZoomDistance = 500
 	camera.FieldOfView = 70
 end
+
 -- ============================================
 -- SCRIPT 2: 40px RESETTER (mit Enforcer-Stop)
 -- ============================================
