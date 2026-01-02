@@ -56,6 +56,240 @@ local function resetCamera()
 	player.CameraMaxZoomDistance = 500
 	camera.FieldOfView = 70
 end
+-- ============================================
+-- SCRIPT 2: 40px RESETTER (mit Enforcer-Stop)
+-- ============================================
 
-resetCamera()
-player.CharacterAdded:Connect(resetCamera)
+-- Funktion zum Stoppen des 5000px Enforcers
+local function stop5000Enforcer()
+    print("⏹️  Versuche 5000px Enforcer zu stoppen...")
+    
+    local stopped = false
+    
+    -- Methode 1: Über _G.Button5000Enforcer
+    if _G.Button5000Enforcer then
+        _G.Button5000Enforcer.isActive = false
+        print("✅ _G.Button5000Enforcer gestoppt")
+        stopped = true
+        
+        -- Lösche Connections
+        if _G.Button5000Enforcer.connections then
+            for _, connection in ipairs(_G.Button5000Enforcer.connections) do
+                pcall(function() connection:Disconnect() end)
+            end
+            print("✅ Alle Connections getrennt")
+        end
+    end
+    
+    -- Methode 2: Über globale Variablen
+    local globalVars = {"run", "isActive", "ButtonSizeEnforcer"}
+    for _, varName in ipairs(globalVars) do
+        if _G[varName] ~= nil then
+            if type(_G[varName]) == "table" and _G[varName].isActive ~= nil then
+                _G[varName].isActive = false
+                print("✅ Tabelle '" .. varName .. "' gestoppt")
+                stopped = true
+            elseif type(_G[varName]) == "boolean" then
+                _G[varName] = false
+                print("✅ Variable '" .. varName .. "' auf false")
+                stopped = true
+            end
+        end
+    end
+    
+    -- Methode 3: Direkte Variablen im aktuellen Environment
+    pcall(function() isActive = false end)
+    pcall(function() run = false end)
+    
+    if not stopped then
+        print("ℹ️  Kein aktiver 5000px Enforcer gefunden")
+    else
+        print("✅ 5000px Enforcer erfolgreich gestoppt")
+    end
+    
+    return stopped
+end
+
+-- Warte kurz nach dem Stoppen
+local function waitForStop()
+    print("⏳ Warte auf vollständiges Stoppen...")
+    for i = 1, 5 do
+        wait(0.1)
+        write(".")
+    end
+    print("\n")
+end
+
+-- Funktion zum Zurücksetzen auf 40px
+local function resetTo40px()
+    print("🔄 Starte Zurücksetzung auf 40px...")
+    
+    local overlay = game:GetService("CoreGui"):FindFirstChild("FoundationOverlay")
+    if not overlay then
+        print("⚠️  FoundationOverlay nicht gefunden")
+        return 0
+    end
+    
+    local resetCount = 0
+    local foundButtons = 0
+    
+    local function processButton(obj)
+        if obj:IsA("ImageButton") then
+            local textLabel = obj:FindFirstChild("Text")
+            if textLabel and textLabel:IsA("TextLabel") then
+                foundButtons = foundButtons + 1
+                
+                -- Prüfe ob es ein Buy Button ist
+                local textLower = string.lower(textLabel.Text)
+                local isBuyButton = string.find(textLower, "buy") or 
+                                   string.find(textLower, "kaufen") or
+                                   string.find(textLower, "5000px")
+                
+                if isBuyButton then
+                    -- Setze auf 40px Höhe
+                    local currentWidth = obj.AbsoluteSize.X
+                    if currentWidth < 50 then currentWidth = 120 end
+                    
+                    obj.Size = UDim2.new(0, currentWidth, 0, 40)
+                    
+                    -- Text zurücksetzen
+                    textLabel.Text = "Buy"
+                    textLabel.TextSize = 14
+                    textLabel.TextColor3 = Color3.new(1, 1, 1)
+                    
+                    -- Farbe zurücksetzen (Standard Roblox Button Farbe)
+                    obj.BackgroundColor3 = Color3.new(0.223529, 0.223529, 0.223529)
+                    obj.BackgroundTransparency = 0
+                    
+                    -- Glow Effekt entfernen
+                    local glow = obj:FindFirstChild("5000pxGlow") or obj:FindFirstChild("SizeGlow")
+                    if glow then
+                        glow:Destroy()
+                    end
+                    
+                    -- Ecken abrunden falls vorhanden
+                    local corner = obj:FindFirstChild("CornerRadius")
+                    if corner then
+                        corner.CornerRadius = UDim.new(0, 8)
+                    end
+                    
+                    resetCount = resetCount + 1
+                    print("   ↪️  Button " .. resetCount .. " auf 40px gesetzt (" .. currentWidth .. "x40)")
+                end
+            end
+        end
+        
+        for _, child in ipairs(obj:GetChildren()) do
+            processButton(child)
+        end
+    end
+    
+    processButton(overlay)
+    
+    print("\n📊 Zusammenfassung:")
+    print("   Gefundene Buttons: " .. foundButtons)
+    print("   Zurückgesetzte Buttons: " .. resetCount)
+    
+    if resetCount > 0 then
+        print("✅ Erfolgreich " .. resetCount .. " Button(s) auf 40px zurückgesetzt")
+    else
+        print("ℹ️  Keine Buy Buttons zum Zurücksetzen gefunden")
+    end
+    
+    return resetCount
+end
+
+-- Spezielle Funktion für ProductPurchaseModal Button
+local function resetSpecificBuyButton()
+    print("🎯 Suche spezifischen Buy Button...")
+    
+    local overlay = game:GetService("CoreGui"):FindFirstChild("FoundationOverlay")
+    if not overlay then return 0 end
+    
+    local modal = overlay:FindFirstChild("ProductPurchaseModal")
+    if not modal then
+        print("⚠️  ProductPurchaseModal nicht gefunden")
+        return resetTo40px()  -- Fallback zu allgemeiner Suche
+    end
+    
+    -- Versuche den genauen Pfad
+    local sheetContainer = modal:FindFirstChild("SheetContainer")
+    if not sheetContainer then return resetTo40px() end
+    
+    local sheet = sheetContainer:FindFirstChild("Sheet")
+    if not sheet or not sheet:IsA("ImageButton") then return resetTo40px() end
+    
+    local content = sheet:FindFirstChild("Content")
+    if not content then return resetTo40px() end
+    
+    local actions = content:FindFirstChild("Actions")
+    if not actions then return resetTo40px() end
+    
+    local button1 = actions:FindFirstChild("1")
+    if not button1 or not button1:IsA("ImageButton") then return resetTo40px() end
+    
+    local textLabel = button1:FindFirstChild("Text")
+    if not textLabel then return resetTo40px() end
+    
+    -- Exakte Zurücksetzung
+    button1.Size = UDim2.new(0, 120, 0, 40)  -- Originalgröße
+    
+    textLabel.Text = "Buy"
+    textLabel.TextSize = 14
+    textLabel.TextColor3 = Color3.new(1, 1, 1)
+    
+    button1.BackgroundColor3 = Color3.new(0.223529, 0.223529, 0.223529)
+    button1.BackgroundTransparency = 0
+    
+    -- Effekte entfernen
+    local glow = button1:FindFirstChild("5000pxGlow") or button1:FindFirstChild("SizeGlow")
+    if glow then glow:Destroy() end
+    
+    print("✅ Spezifischer Buy Button exakt auf 120x40px zurückgesetzt")
+    return 1
+end
+
+-- Hauptfunktion
+local function mainReset()
+    print("=========================================")
+    print("🔄 40px RESETTER START")
+    print("=========================================")
+    
+    -- 1. Stoppe 5000px Enforcer
+    stop5000Enforcer()
+    
+    -- 2. Warte kurz
+    waitForStop()
+    
+    -- 3. Zurücksetzen auf 40px
+    local result = resetSpecificBuyButton()
+    
+    if result == 0 then
+        print("ℹ️  Spezifischer Button nicht gefunden, versuche allgemeine Suche...")
+        result = resetTo40px()
+    end
+    
+    -- 4. Finale Meldung
+    print("\n=========================================")
+    print("✨ RESET KOMPLETT!")
+    print("=========================================")
+    
+    if result > 0 then
+        print("✅ 5000px Enforcer gestoppt")
+        print("✅ Button erfolgreich auf 40px zurückgesetzt")
+        print("✅ Alles ist wieder normal!")
+    else
+        print("ℹ️  Es wurde nichts geändert (möglicherweise schon auf 40px)")
+    end
+    
+    print("=========================================\n")
+    
+    return result
+end
+
+-- Starte automatisch
+wait(0.5)
+mainReset()
+
+-- Einzeiler zum späteren Ausführen:
+-- mainReset()
